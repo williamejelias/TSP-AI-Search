@@ -1,26 +1,16 @@
 import Initialise
 import random
 import math
-
-filepath = './cityfiles/AISearchfile017.txt'
-initialisedList = Initialise.initialise(filepath)
-cityFileName = initialisedList[0]
-numberOfCities = initialisedList[1]
-distanceMatrix = initialisedList[2]
-# need to extract number of cities from initialisation
-
-tours = []
-currentTour = []
-lengthOfTour = 0
+import sys
 
 
 # generate initial random tour to start
-def random_tour():
-    random_tour = []
-    for i in range(1, (numberOfCities + 1)):
-        random_tour.append(i)
-    random.shuffle(random_tour)
-    return random_tour
+def random_tour(number_of_cities):
+    random_tours = []
+    for i in range(1, (number_of_cities + 1)):
+        random_tours.append(i)
+    random.shuffle(random_tours)
+    return random_tours
 
 
 # calculate length of a tour
@@ -33,10 +23,10 @@ def tour_length(tour):
 
 
 # generate an initial population of tours
-def initial_population(population_size):
+def initial_population(population_size, number_of_cities):
     global tours
     for i in range(population_size):
-        tours.append(random_tour())
+        tours.append(random_tour(number_of_cities))
 
 
 # use a 'roulette wheel' to pick two parent tours from the population
@@ -59,7 +49,7 @@ def roulette_wheel():
 def mutate_child(child, probability):
     x = random.randint(0, 100) / 100
     if x < probability:
-        swap_indices = random.sample(range(numberOfCities), 2)
+        swap_indices = random.sample(range(number_of_cities), 2)
         index1 = swap_indices[0]
         index2 = swap_indices[1]
         new_child = list(child)
@@ -72,10 +62,10 @@ def mutate_child(child, probability):
 
 
 # generate a child using two given parent tours from the population
-def generate_child(parent_tour1, parent_tour2, mutate_probability, populationSize):
+def generate_child(parent_tour1, parent_tour2, mutate_probability):
     # randomly generate an index in which to slice and rejoin parents to form 2 new tours (possibly with repetitions
     # etc)
-    random_index = math.floor(int(random.uniform(0, numberOfCities)))
+    random_index = math.floor(int(random.uniform(0, number_of_cities)))
     parent1p1 = list(parent_tour1[:random_index])
     parent1p2 = list(parent_tour1[random_index:])
     parent2p1 = list(parent_tour2[:random_index])
@@ -101,13 +91,13 @@ def generate_child(parent_tour1, parent_tour2, mutate_probability, populationSiz
     del temp_list[:]
 
     # fix repeats/missing cities in children
-    for i in range(numberOfCities):
+    for i in range(number_of_cities):
         if child1[i] not in temp_list:
             temp_list.append(child1[i])
         else:
             child1[i] = repeated_values_child2.pop()
     del temp_list[:]
-    for i in range(numberOfCities):
+    for i in range(number_of_cities):
         if child2[i] not in temp_list:
             temp_list.append(child2[i])
         else:
@@ -130,7 +120,7 @@ def genetic(population_size, mutate_probability, cut_off):
     global tours
     global overallBestFitness
     global overallBestTour
-    initial_population(population_size)
+    initial_population(population_size, number_of_cities)
     current_best_fitness = tour_length(tours[0]) + 1
     current_best_tour = tours[0]
 
@@ -143,7 +133,7 @@ def genetic(population_size, mutate_probability, cut_off):
         while count < population_size:
             parent1 = roulette_wheel()
             parent2 = roulette_wheel()
-            mutated_child = generate_child(parent1, parent2, mutate_probability, population_size)
+            mutated_child = generate_child(parent1, parent2, mutate_probability)
             new_tours.append(mutated_child)
             count += 1
         tours = new_tours
@@ -170,11 +160,6 @@ def genetic(population_size, mutate_probability, cut_off):
     return return_list
 
 
-initial_population(10)
-overallBestFitness = tour_length(tours[0])
-overallBestTour = tours[0]
-
-
 # repeat the genetic algorithm a number of times and print the best tour/length
 def find_best(population_size, mutate_probability, cut_off, repetition):
     pop_list = genetic(population_size, mutate_probability, cut_off)
@@ -194,6 +179,33 @@ def find_best(population_size, mutate_probability, cut_off, repetition):
     return return_list
 
 
-print(cityFileName, ",")
-print("SIZE = ", numberOfCities, ",")
-find_best(100, 0.5, 1000, 10)
+tours = []
+currentTour = []
+lengthOfTour = 0
+
+try:
+    # need to extract number of cities from initialisation
+    filepath = sys.argv[1]
+    initialisedList = Initialise.initialise(filepath)
+    cityFileName = initialisedList[0]
+    number_of_cities = initialisedList[1]
+    distanceMatrix = initialisedList[2]
+    print(cityFileName, ",")
+    print("SIZE = ", number_of_cities, ",")
+    initial_population(10, number_of_cities)
+    overallBestFitness = tour_length(tours[0])
+    overallBestTour = tours[0]
+    pop_size = sys.argv[2]
+    mutate = sys.argv[3]
+    cut = sys.argv[4]
+    repeats = sys.argv[5]
+    try:
+        find_best(int(pop_size), float(mutate), int(cut), int(repeats))
+    except Exception as msg:
+        print(msg)
+        print("Incorrect argument format...")
+        exit()
+except Exception as msg:
+    print(msg)
+    print("Invalid file supplied...")
+    exit()
