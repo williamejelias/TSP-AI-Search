@@ -1,24 +1,16 @@
 import Initialise
 import random
 import math
-
-filepath = './cityfiles/AISearchfile180.txt'
-initialisedList = Initialise.initialise(filepath)
-cityFileName = initialisedList[0]
-numberOfCities = initialisedList[1]
-distanceMatrix = initialisedList[2]
-
-currentTour = []
-lengthOfTour = 0
+import sys
 
 
 # generate initial random tour to start
 def random_tour():
-    random_tour = []
+    tour = []
     for i in range(1, (numberOfCities + 1)):
-        random_tour.append(i)
-    random.shuffle(random_tour)
-    return random_tour
+        tour.append(i)
+    random.shuffle(tour)
+    return tour
 
 
 # from a tour, randomly swap two cities and output
@@ -42,9 +34,6 @@ def tour_length(tour):
     return length
 
 
-initialTour = random_tour()
-overallBestTour = initialTour
-overallBestFitness = tour_length(initialTour)
 
 
 # simulated annealing
@@ -85,8 +74,34 @@ def find_best(cities, matrix, temperature, cooling_rate, repetition):
     return overallBestTour
 
 
-find_best(numberOfCities, distanceMatrix, 100, 1.0000001, 500)
-print(cityFileName, ",")
-print("TOURSIZE = ", numberOfCities, ",")
-print("LENGTH = ", overallBestFitness, ",")
-print(str(overallBestTour))
+try:
+    filepath = sys.argv[1]
+    initialisedList = Initialise.initialise(filepath)
+    cityFileName = initialisedList[0]
+    numberOfCities = initialisedList[1]
+    distanceMatrix = initialisedList[2]
+    currentTour = []
+    lengthOfTour = 0
+
+    initialTour = random_tour()
+    overallBestTour = initialTour
+    overallBestFitness = tour_length(initialTour)
+    temp = sys.argv[2]
+    cooling = sys.argv[3]
+    repeats = sys.argv[4]
+    try:
+        find_best(numberOfCities, distanceMatrix, int(temp), float(cooling), int(repeats))
+        print(cityFileName, ",")
+        print("TOURSIZE = ", numberOfCities, ",")
+        print("LENGTH = ", overallBestFitness, ",")
+        print(str(overallBestTour))
+    except Exception as msg:
+        print(msg)
+        print("Incorrect argument format")
+        exit()
+except Exception as msg:
+    print(msg)
+    print("Incorrect file format...")
+    exit()
+
+
